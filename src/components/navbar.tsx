@@ -1,16 +1,25 @@
-import { useState } from "react";
 import { SearchIcon, XIcon } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
+import { useSearch } from "@/components/search-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function Navbar() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm } = useSearch();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  function handleSearchChange(value: string) {
+    setSearchTerm(value);
+
+    if (value && pathname !== "/") navigate("/");
+  }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80">
       <SidebarTrigger className="-ml-1" />
       <Separator
         orientation="vertical"
@@ -21,8 +30,8 @@ export function Navbar() {
         <Input
           type="text"
           value={searchTerm}
-          onChange={(event) => setSearchTerm(event.target.value)}
-          placeholder="Search"
+          onChange={(event) => handleSearchChange(event.target.value)}
+          placeholder="Search your library"
           aria-label="Search"
           className="pr-8 pl-8"
         />

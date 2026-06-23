@@ -1,7 +1,11 @@
+import { Scan } from "./_components/scan";
+import { SettingsHeader } from "./_components/settings-header";
+
 const SettingsPage = () => {
   return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-8 pb-10">
+      <SettingsHeader />
+      <Scan />
     </div>
   );
 };
