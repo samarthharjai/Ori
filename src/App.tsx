@@ -5,6 +5,10 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import HomePage from "@/pages/home/page";
+import LibraryPage from "@/pages/library/page";
+import SettingsPage from "@/pages/settings/page";
+import { Route, Routes } from "react-router-dom";
 
 function App() {
 
@@ -14,6 +18,13 @@ function App() {
         <AppSidebar />
         <SidebarInset>
           <Navbar />
+          <main className="flex-1 p-4 md:p-6">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Routes>
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>
