@@ -1,35 +1,56 @@
 import { SearchXIcon } from "lucide-react";
+import { useMemo } from "react";
 
-import { LibraryGrid } from "@/components/library-grid";
+import { LibraryCarousel, LibraryGrid } from "@/components/library-grid";
+import { useScan } from "@/components/scan-provider";
 import { useSearch } from "@/components/search-provider";
 import { Card, CardContent } from "@/components/ui/card";
-import { getLibraryItems, getStoredLibraryScans } from "@/lib/library";
+import { getLibraryItems, getRecentlyAddedItems } from "@/lib/library";
 
 const HomePage = () => {
   const { searchTerm } = useSearch();
+  const { libraries, scans } = useScan();
   const normalizedTerm = searchTerm.trim().toLowerCase();
+  const libraryItems = useMemo(
+    () => getLibraryItems(libraries, scans),
+    [libraries, scans]
+  );
+  const recentlyAdded = useMemo(
+    () => getRecentlyAddedItems(libraryItems),
+    [libraryItems]
+  );
 
   if (!normalizedTerm) {
     return (
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Home</h1>
-        <p className="text-sm text-muted-foreground">
-          Search from the bar above to find manga, comics, webtoons, books, and
-          audiobooks across your library.
-        </p>
+      <div className="flex w-full min-w-0 flex-col gap-8">
+        {recentlyAdded.length > 0 ? (
+          <LibraryCarousel
+            title="Recently added"
+            items={recentlyAdded}
+            showMoreHref="/library"
+          />
+        ) : (
+          <Card className="border-dashed">
+            <CardContent className="flex min-h-64 flex-col items-center justify-center gap-2 text-center">
+              <p className="text-sm font-medium">Nothing here yet</p>
+              <p className="max-w-md text-sm text-muted-foreground">
+                Scan folders in settings to populate your library.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   }
 
-  const libraryItems = getLibraryItems(getStoredLibraryScans());
   const results = libraryItems.filter(
     (item) =>
       item.title.toLowerCase().includes(normalizedTerm) ||
-      item.libraryTitle.toLowerCase().includes(normalizedTerm)
+      item.libraryName.toLowerCase().includes(normalizedTerm)
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+    <div className="flex w-full min-w-0 flex-col gap-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Search results</h1>
         <p className="text-sm text-muted-foreground">

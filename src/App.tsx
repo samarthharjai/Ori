@@ -1,5 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { Navbar } from "@/components/navbar";
+import { ScanProvider } from "@/components/scan-provider";
 import { SearchProvider } from "@/components/search-provider";
 import {
   SidebarInset,
@@ -14,23 +15,26 @@ import { Route, Routes } from "react-router-dom";
 function App() {
 
   return (
-    <SearchProvider>
-      <TooltipProvider>
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <Navbar />
-            <main className="flex-1 p-4 md:p-6">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/library" element={<LibraryPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-              </Routes>
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
-      </TooltipProvider>
-    </SearchProvider>
+    <ScanProvider>
+      <SearchProvider>
+        <TooltipProvider>
+            <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset className="min-w-0 overflow-hidden">
+              <Navbar />
+              <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto p-4 md:p-6">
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/library" element={<LibraryPage />} />
+                  <Route path="/library/:sectionId" element={<LibraryPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                </Routes>
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+        </TooltipProvider>
+      </SearchProvider>
+    </ScanProvider>
   );
 }
 

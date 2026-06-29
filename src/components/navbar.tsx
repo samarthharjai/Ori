@@ -1,6 +1,7 @@
 import { SearchIcon, XIcon } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { ScanStatus } from "@/components/scan-status";
 import { useSearch } from "@/components/search-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,13 +20,13 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80">
+    <header className="sticky top-0 z-30 flex h-14 min-w-0 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/80">
       <SidebarTrigger className="-ml-1" />
       <Separator
         orientation="vertical"
         className="mr-2 data-[orientation=vertical]:h-5"
       />
-      <div className="relative w-full max-w-xl">
+      <div className="relative min-w-0 flex-1 max-w-xl">
         <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="text"
@@ -47,6 +48,10 @@ export function Navbar() {
             <XIcon className="size-3.5" />
           </Button>
         ) : null}
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center">
+        <ScanStatus />
       </div>
     </header>
   );

@@ -1,9 +1,8 @@
-"use client"
-
 import * as React from "react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { useScan } from "@/components/scan-provider"
 import {
   Sidebar,
   SidebarContent,
@@ -16,87 +15,37 @@ import {
 } from "@/components/ui/sidebar"
 import { BookOpenIcon, HomeIcon, Settings2Icon } from "lucide-react"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
+const user = {
+  name: "shadcn",
+  email: "m@example.com",
+  avatar: "/avatars/shadcn.jpg",
+}
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { libraries } = useScan()
+
+  const navMain = [
     {
       title: "Home",
       url: "/",
       icon: <HomeIcon />,
-      isActive: true,
-      items: [
-        {
-          title: "All Series",
-          url: "/",
-        },
-        {
-          title: "Bookmarks",
-          url: "/bookmarks",
-        },
-        {
-          title: "Collections",
-          url: "/collections",
-        },
-      ],
     },
     {
       title: "Library",
       url: "/library",
       icon: <BookOpenIcon />,
-      items: [
-        {
-          title: "Manga",
-          url: "/library/manga",
-        },
-        {
-          title: "Comics",
-          url: "/library/comics",
-        },
-        {
-          title: "Webtoons",
-          url: "/library/webtoons",
-        },
-        {
-          title: "Books",
-          url: "/library/books",
-        },
-        {
-          title: "AudioBooks",
-          url: "/library/audiobooks",
-        },
-      ],
+      items: libraries.map((library) => ({
+        title: library.name,
+        url: `/library/${library.id}`,
+      })),
     },
     {
       title: "Settings",
       url: "/settings",
       icon: <Settings2Icon />,
-      items: [
-        {
-          title: "General",
-          url: "/settings",
-        },
-        {
-          title: "Team",
-          url: "/settings/team",
-        },
-        {
-          title: "Billing",
-          url: "/settings/billing",
-        },
-        {
-          title: "Limits",
-          url: "/settings/limits",
-        },
-      ],
     },
-  ],
-}
+  ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -118,10 +67,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

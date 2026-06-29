@@ -1,4 +1,8 @@
-export const libraryStorageKey = "mangareader:library-scans";
+import { invoke } from "@tauri-apps/api/core";
+
+export type IconName = "book" | "headphones" | "image";
+
+export const archiveExtensions = ["cbz", "cbr", "zip", "epub", "rar"];
 
 export const supportedFormats = [
   "CBZ",
@@ -12,63 +16,84 @@ export const supportedFormats = [
   "RAR",
 ];
 
-export const contentLibraries = [
-  {
-    id: "manga",
-    title: "Manga",
-    description: "Japanese manga series, volumes, and chapter archives.",
-    example: "Manga / Dragon Ball / Chapter 001.cbz",
-    formats: ["CBZ", "CBR", "PDF", "ZIP", "RAR"],
-    iconName: "image",
-  },
-  {
-    id: "comics",
-    title: "Comics",
-    description: "Comic runs, volumes, single issues, and collected editions.",
-    example: "Comics / Batman / Issue 001.cbr",
-    formats: ["CBZ", "CBR", "PDF", "ZIP", "RAR"],
-    iconName: "image",
-  },
-  {
-    id: "webtoons",
-    title: "Webtoons",
-    description: "Long-strip webtoon folders, episode archives, and PDFs.",
-    example: "Webtoons / Solo Leveling / Episode 001.zip",
-    formats: ["ZIP", "RAR", "CBZ", "PDF"],
-    iconName: "image",
-  },
-  {
-    id: "books",
-    title: "Books",
-    description: "Regular ebooks, novels, light novels, and PDFs.",
-    example: "Books / Brandon Sanderson / Mistborn.epub",
-    formats: ["EPUB", "MOBI", "PDF"],
-    iconName: "book",
-  },
-  {
-    id: "audiobooks",
-    title: "Audiobooks",
-    description: "Narrated books and audio collections.",
-    example: "Audiobooks / Dune / Dune.m4b",
-    formats: ["MP3", "M4B"],
-    iconName: "headphones",
-  },
-] satisfies ContentLibrary[];
+export type ContentType =
+  | "manga"
+  | "comics"
+  | "webtoons"
+  | "books"
+  | "audiobooks";
 
-export interface ContentLibrary {
-  id: string;
-  title: string;
+export interface ContentTypeInfo {
+  label: string;
   description: string;
-  example: string;
+  iconName: IconName;
   formats: string[];
-  iconName: "book" | "headphones" | "image";
+  unit: string;
+  unitSingular: string;
+}
+
+export const contentTypes: Record<ContentType, ContentTypeInfo> = {
+  manga: {
+    label: "Manga",
+    description: "Japanese manga series, volumes, and chapter archives.",
+    iconName: "image",
+    formats: ["CBZ", "CBR", "PDF", "ZIP", "RAR"],
+    unit: "chapters",
+    unitSingular: "chapter",
+  },
+  comics: {
+    label: "Comics",
+    description: "Comic runs, volumes, single issues, and collected editions.",
+    iconName: "image",
+    formats: ["CBZ", "CBR", "PDF", "ZIP", "RAR"],
+    unit: "issues",
+    unitSingular: "issue",
+  },
+  webtoons: {
+    label: "Webtoons",
+    description: "Long-strip webtoon folders, episode archives, and PDFs.",
+    iconName: "image",
+    formats: ["ZIP", "RAR", "CBZ", "PDF"],
+    unit: "episodes",
+    unitSingular: "episode",
+  },
+  books: {
+    label: "Books",
+    description: "Ebooks, novels, light novels, and PDFs.",
+    iconName: "book",
+    formats: ["EPUB", "MOBI", "PDF"],
+    unit: "volumes",
+    unitSingular: "volume",
+  },
+  audiobooks: {
+    label: "Audiobooks",
+    description: "Narrated books and audio collections.",
+    iconName: "headphones",
+    formats: ["MP3", "M4B"],
+    unit: "tracks",
+    unitSingular: "track",
+  },
+};
+
+export const contentTypeOrder: ContentType[] = [
+  "manga",
+  "comics",
+  "webtoons",
+  "books",
+  "audiobooks",
+];
+
+export interface Library {
+  id: string;
+  name: string;
+  type: ContentType;
+  folderPath: string;
 }
 
 export interface ContentFile {
   name: string;
   path: string;
   extension: string;
-  coverPath?: string | null;
 }
 
 export interface ContentFolderScan {
@@ -84,52 +109,68 @@ export type LibraryScans = Record<string, ContentFolderScan | undefined>;
 export interface ScanProgress {
   processed: number;
   total: number;
+  done: boolean;
+  currentName?: string | null;
+}
+
+export interface ScanBatch {
+  files: ContentFile[];
 }
 
 export interface LibraryItem {
   id: string;
   title: string;
   libraryId: string;
-  libraryTitle: string;
+  libraryName: string;
+  type: ContentType;
   rootPath: string;
-  coverPath?: string | null;
+  coverSourcePath?: string;
   files: ContentFile[];
   formats: string[];
+  addedOrder: number;
 }
 
-export function getStoredLibraryScans(): LibraryScans {
-  const storedValue = window.localStorage.getItem(libraryStorageKey);
 
-  if (!storedValue) return {};
-
+export async function loadLibraries(): Promise<Library[]> {
   try {
-    return JSON.parse(storedValue) as LibraryScans;
+    const raw = await invoke<string>("load_libraries");
+    const parsed = JSON.parse(raw) as Library[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveLibraries(libraries: Library[]): Promise<void> {
+  await invoke("save_libraries", { data: JSON.stringify(libraries) });
+}
+
+export async function loadLibraryScans(): Promise<LibraryScans> {
+  try {
+    const raw = await invoke<string>("load_scans");
+    return JSON.parse(raw) as LibraryScans;
   } catch {
     return {};
   }
 }
 
-export function setStoredLibraryScans(scans: LibraryScans) {
-  window.localStorage.setItem(libraryStorageKey, JSON.stringify(scans));
+export async function saveLibraryScans(scans: LibraryScans): Promise<void> {
+  await invoke("save_scans", { data: JSON.stringify(scans) });
 }
 
-export function setStoredLibraryScan(
-  scans: LibraryScans,
-  libraryId: string,
-  scan: ContentFolderScan
-) {
-  const nextScans = {
-    ...scans,
-    [libraryId]: scan,
-  };
+export function createLibraryId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
 
-  setStoredLibraryScans(nextScans);
-
-  return nextScans;
+  return `lib-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function getLibraryItems(scans: LibraryScans) {
-  return contentLibraries.flatMap((library) => {
+export function getLibraryItems(
+  libraries: Library[],
+  scans: LibraryScans
+): LibraryItem[] {
+  return libraries.flatMap((library) => {
     const scan = scans[library.id];
 
     if (!scan) return [];
@@ -138,18 +179,22 @@ export function getLibraryItems(scans: LibraryScans) {
   });
 }
 
-function groupScanFiles(library: ContentLibrary, scan: ContentFolderScan) {
-  const groupedFiles = new Map<string, ContentFile[]>();
+function groupScanFiles(library: Library, scan: ContentFolderScan) {
+  const groupedFiles = new Map<string, { files: ContentFile[]; order: number }>();
 
-  for (const file of scan.supportedFiles) {
+  scan.supportedFiles.forEach((file, index) => {
     const title = getItemTitle(scan.rootPath, file);
-    const files = groupedFiles.get(title) ?? [];
+    const group = groupedFiles.get(title);
 
-    files.push(file);
-    groupedFiles.set(title, files);
-  }
+    if (group) {
+      group.files.push(file);
+      group.order = Math.max(group.order, index);
+    } else {
+      groupedFiles.set(title, { files: [file], order: index });
+    }
+  });
 
-  return Array.from(groupedFiles.entries()).map(([title, files]) => {
+  return Array.from(groupedFiles.entries()).map(([title, { files, order }]) => {
     const formats = Array.from(
       new Set(files.map((file) => file.extension.toUpperCase()))
     ).sort();
@@ -158,13 +203,20 @@ function groupScanFiles(library: ContentLibrary, scan: ContentFolderScan) {
       id: `${library.id}:${title}`,
       title,
       libraryId: library.id,
-      libraryTitle: library.title,
+      libraryName: library.name,
+      type: library.type,
       rootPath: scan.rootPath,
-      coverPath: files.find((file) => file.coverPath)?.coverPath,
+      coverSourcePath: getCoverSourcePath(files),
       files,
       formats,
+      addedOrder: order,
     } satisfies LibraryItem;
   });
+}
+function getCoverSourcePath(files: ContentFile[]): string | undefined {
+  return files.find((file) =>
+    archiveExtensions.includes(file.extension.toLowerCase())
+  )?.path;
 }
 
 function getItemTitle(rootPath: string, file: ContentFile) {
@@ -188,4 +240,29 @@ function getRelativePath(rootPath: string, filePath: string) {
 
 function removeExtension(fileName: string) {
   return fileName.replace(/\.[^/.]+$/, "");
+}
+
+export function groupItemsByLibrary(
+  libraries: Library[],
+  items: LibraryItem[]
+) {
+  return libraries
+    .map((library) => ({
+      library,
+      items: items.filter((item) => item.libraryId === library.id),
+    }))
+    .filter((section) => section.items.length > 0);
+}
+
+export function getRecentlyAddedItems(items: LibraryItem[], limit = 20) {
+  return [...items]
+    .sort((left, right) => right.addedOrder - left.addedOrder)
+    .slice(0, limit);
+}
+
+export function formatItemCount(count: number, type: ContentType) {
+  const info = contentTypes[type];
+  const unit = count === 1 ? info.unitSingular : info.unit;
+
+  return `${count} ${unit}`;
 }

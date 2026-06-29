@@ -20,7 +20,7 @@ export function LibraryGrid({
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-6 min-[480px]:grid-cols-3 min-[640px]:grid-cols-4 min-[900px]:grid-cols-5 min-[1100px]:grid-cols-6 min-[1400px]:grid-cols-7">
       {items.map((item) => (
         <LibraryCard key={item.id} item={item} />
       ))}
